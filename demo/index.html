@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Lousy Load Demo</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            .ll-demo {
+                max-width: 50em;
+                margin: 0 auto;
+            }
+
+            .ll-demo img {
+                max-width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="ll-demo">
+            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
+        </div>
+
+        <script src="../dist/lousy-load.js"></script>
+        <script>
+            var ll = new lousyLoad(document.querySelector('.ll-demo'));
+        </script>
+    </body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "lousy-load",
+  "version": "0.1.0",
+  "description": "A lazy loader for the future",
+  "main": "lousy-loader.js",
+  "repository": "https://github.com/frxnz/lousy-load.git",
+  "author": "Derek Wheelden <derek.wheelden@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "ava": "^0.19.1",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.5.2",
+    "browser-env": "^2.0.31",
+    "canvas-prebuilt": "^1.6.5-prerelease.1",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^3.0.0",
+    "pump": "^1.0.2",
+    "sinon": "^2.3.4"
+  },
+  "scripts": {
+    "test": "ava"
+  },
+  "dependencies": {
+    "global": "^4.3.2"
+  },
+  "ava": {
+    "require": [
+      "./test/helpers/setup-browser-env.js"
+    ]
+  }
+}
