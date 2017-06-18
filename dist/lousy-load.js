@@ -53,6 +53,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         return extended;
     };
 
+    // NodeList `forEach` polyfill for IE support
+    // via https://developer.mozilla.org/en-US/docs/Web/API/NodeList/forEach
+    if (window.NodeList && !NodeList.prototype.forEach) {
+        NodeList.prototype.forEach = function (callback, argument) {
+            argument = argument || window;
+            for (var i = 0; i < this.length; i++) {
+                callback.call(argument, this[i], i, this);
+            }
+        };
+    }
+
     /**
      * Plugin Object
      * @param element The html element to initialize
