@@ -20,6 +20,9 @@
 
     const defaults = {
         immediate : true,
+        selector : '',
+        threshold : 100,
+        wrapElement : true,
     };
 
     /**
@@ -57,8 +60,8 @@
     }
 
     /**
-     * Plugin Object
-     * @param element The html element to initialize
+     * Plugin class
+     * @param {Node} element The html element to initialize
      * @param {Object} options User options
      * @constructor
      */
@@ -123,7 +126,7 @@
         };
 
         init() {
-            const $images = this.element.querySelectorAll('img');
+            const $images = this.element.querySelectorAll(`img${this.options.selector}`);
 
             $images.forEach(this.prepareImage.bind(this));
 
@@ -133,35 +136,43 @@
         prepareImage($image) {
             const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             const dimensions = getImageDimensions($image);
-            const $wrapper = document.createElement('span');
-            $wrapper.classList.add('ll-image_wrapper');
-            $wrapper.style.width = `${dimensions.width}px`;
-            $wrapper.style.height = `${dimensions.height}px`;
-            $wrapper.style.display = 'inline-block';
+            let $wrapper;
 
-            $image.classList.add('ll-image');
-            $image.style.width = `${dimensions.width}px`;
-            $image.style.height = `${dimensions.height}px`;
+            if (this.options.wrapElement) {
+                $wrapper = document.createElement('span');
+                $wrapper.classList.add('ll-image_wrapper');
+                $wrapper.style.width = `${dimensions.width}px`;
+                $wrapper.style.height = `${dimensions.height}px`;
+                $wrapper.style.display = 'inline-block';
 
-            this.utils.wrapElement($wrapper, $image);
+                $image.classList.add('ll-image');
+                $image.style.width = `${dimensions.width}px`;
+                $image.style.height = `${dimensions.height}px`;
+
+                this.utils.wrapElement($wrapper, $image);
+            }
 
             $image.onload = function() {
                 $image.parentElement.classList.add('is-loaded');
+
+                if (this.options.wrapElement) {
+                    $wrapper.classList.add('is-loaded');
+                }
             };
 
-            if ($image.offsetTop < document.documentElement.scrollTop + viewportHeight - 100) {
-                $image.src = $image.getAttribute('data-src');
-            }
+            const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+            const scrollHandler = this.utils.debounce(function() {
+                const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
 
-            // if ($image.offset().top < $(window).scrollTop() + $(window).height() - 100) {
-            //     this.loadImage($image);
-            // } else {
-            //     $(window).on('scroll', this.utils.debounce(function() {
-            //         if ($image.offset().top < $(window).scrollTop() + $(window).height() - 100) {
-            //             this.loadImage($image);
-            //         }
-            //     }.bind(this), 50))
-            // }
+                if (isLoaded) {
+                    window.removeEventListener('scroll', scrollHandler);
+                }
+
+            }.bind(this), 50);
+
+            if (!isLoaded) {
+                window.addEventListener('scroll', scrollHandler);
+            }
 
             function getImageDimensions($image) {
                 const styles = window.getComputedStyle($image);
@@ -172,7 +183,11 @@
 
                 if (maxWidth) {
                     if (maxWidth.indexOf('%') > -1) {
-                        maxWidth = $image.parentElement.offsetWidth;
+                        const fraction = Number(maxWidth.replace('%', '')) / 100;
+                        const parentStyles = window.getComputedStyle($image.parentElement);
+                        const parentWidth = parentStyles.getPropertyValue('width');
+
+                        maxWidth = Number(parentWidth.replace('px', '')) * fraction;
                     }
                     else if (maxWidth.indexOf('px') > -1) {
                         maxWidth = maxWidth.replace('px', '');
@@ -191,6 +206,15 @@
                     aspectRatio : aspectRatio,
                 };
             }
+        }
+
+        tryLoadImage($image, scrollTop) {
+            if ($image.offsetTop < scrollTop) {
+                $image.src = $image.getAttribute('data-src');
+                return true;
+            }
+
+            return false;
         }
     }
 

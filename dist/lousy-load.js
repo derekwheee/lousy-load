@@ -27,7 +27,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     'use strict';
 
     var defaults = {
-        immediate: true
+        immediate: true,
+        selector: '',
+        threshold: 100,
+        wrapElement: true
     };
 
     /**
@@ -65,8 +68,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     }
 
     /**
-     * Plugin Object
-     * @param element The html element to initialize
+     * Plugin class
+     * @param {Node} element The html element to initialize
      * @param {Object} options User options
      * @constructor
      */
@@ -136,7 +139,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _createClass(Plugin, [{
             key: 'init',
             value: function init() {
-                var $images = this.element.querySelectorAll('img');
+                var $images = this.element.querySelectorAll('img' + this.options.selector);
 
                 $images.forEach(this.prepareImage.bind(this));
 
@@ -147,35 +150,42 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function prepareImage($image) {
                 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
                 var dimensions = getImageDimensions($image);
-                var $wrapper = document.createElement('span');
-                $wrapper.classList.add('ll-image_wrapper');
-                $wrapper.style.width = dimensions.width + 'px';
-                $wrapper.style.height = dimensions.height + 'px';
-                $wrapper.style.display = 'inline-block';
+                var $wrapper = void 0;
 
-                $image.classList.add('ll-image');
-                $image.style.width = dimensions.width + 'px';
-                $image.style.height = dimensions.height + 'px';
+                if (this.options.wrapElement) {
+                    $wrapper = document.createElement('span');
+                    $wrapper.classList.add('ll-image_wrapper');
+                    $wrapper.style.width = dimensions.width + 'px';
+                    $wrapper.style.height = dimensions.height + 'px';
+                    $wrapper.style.display = 'inline-block';
 
-                this.utils.wrapElement($wrapper, $image);
+                    $image.classList.add('ll-image');
+                    $image.style.width = dimensions.width + 'px';
+                    $image.style.height = dimensions.height + 'px';
+
+                    this.utils.wrapElement($wrapper, $image);
+                }
 
                 $image.onload = function () {
                     $image.parentElement.classList.add('is-loaded');
+
+                    if (this.options.wrapElement) {
+                        $wrapper.classList.add('is-loaded');
+                    }
                 };
 
-                if ($image.offsetTop < document.documentElement.scrollTop + viewportHeight - 100) {
-                    $image.src = $image.getAttribute('data-src');
-                }
+                var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+                var scrollHandler = this.utils.debounce(function () {
+                    var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
 
-                // if ($image.offset().top < $(window).scrollTop() + $(window).height() - 100) {
-                //     this.loadImage($image);
-                // } else {
-                //     $(window).on('scroll', this.utils.debounce(function() {
-                //         if ($image.offset().top < $(window).scrollTop() + $(window).height() - 100) {
-                //             this.loadImage($image);
-                //         }
-                //     }.bind(this), 50))
-                // }
+                    if (isLoaded) {
+                        window.removeEventListener('scroll', scrollHandler);
+                    }
+                }.bind(this), 50);
+
+                if (!isLoaded) {
+                    window.addEventListener('scroll', scrollHandler);
+                }
 
                 function getImageDimensions($image) {
                     var styles = window.getComputedStyle($image);
@@ -186,7 +196,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                     if (maxWidth) {
                         if (maxWidth.indexOf('%') > -1) {
-                            maxWidth = $image.parentElement.offsetWidth;
+                            var fraction = Number(maxWidth.replace('%', '')) / 100;
+                            var parentStyles = window.getComputedStyle($image.parentElement);
+                            var parentWidth = parentStyles.getPropertyValue('width');
+
+                            maxWidth = Number(parentWidth.replace('px', '')) * fraction;
                         } else if (maxWidth.indexOf('px') > -1) {
                             maxWidth = maxWidth.replace('px', '');
                         }
@@ -204,6 +218,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         aspectRatio: aspectRatio
                     };
                 }
+            }
+        }, {
+            key: 'tryLoadImage',
+            value: function tryLoadImage($image, scrollTop) {
+                if ($image.offsetTop < scrollTop) {
+                    $image.src = $image.getAttribute('data-src');
+                    return true;
+                }
+
+                return false;
             }
         }]);
 

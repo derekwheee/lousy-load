@@ -16,11 +16,14 @@
     "gulp-babel": "^6.1.2",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^3.0.0",
+    "jquery": "^3.2.1",
+    "nyc": "^11.0.2",
     "pump": "^1.0.2",
     "sinon": "^2.3.4"
   },
   "scripts": {
-    "test": "ava"
+    "test": "nyc ava",
+    "report": "nyc report --reporter=html"
   },
   "dependencies": {
     "global": "^4.3.2"
