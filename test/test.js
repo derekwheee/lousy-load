@@ -68,7 +68,7 @@ test('validate setup', t => {
 test('debounce', t => {
     const ll = new lousyLoad(t.context.container);
     const spy = sinon.spy();
-    const debouncer = ll.utils.debounce(spy, 100, true);
+    const debouncer = ll.__debounce(spy, 100, true);
 
     debouncer();
     debouncer();
@@ -83,7 +83,7 @@ test('wrap element', t => {
     const wrapper = document.createElement('div');
 
     wrapper.classList.add('wrapper');
-    ll.utils.wrapElement(wrapper, image);
+    ll.__wrapElement(wrapper, image);
 
     t.true(image.parentElement.classList.contains('wrapper'));
 });
@@ -94,6 +94,18 @@ test('init', t => {
 
     t.true(NodeList.prototype.isPrototypeOf(init));
     t.is(init.length, 3);
+});
+
+test('image dimensions', t => {
+    const ll = new lousyLoad(t.context.container);
+    const image = t.context.container.querySelector('img');
+    const dimensions = ll.__getImageDimensions(image);
+
+    t.is(dimensions.width, '1600');
+    t.is(dimensions.height, '1200');
+    t.is(dimensions.maxWidth, 1600);
+    t.is(dimensions.aspectRatio, 4 / 3);
+
 });
 
 test('image wrapper', t => {

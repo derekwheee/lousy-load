@@ -77,54 +77,6 @@
             }
         }
 
-        utils = {
-            debounce : function(func, wait, immediate) {
-                // https://davidwalsh.name/javascript-debounce-function
-                let timeout;
-                return function() {
-                    const context = this;
-                    const args = arguments;
-                    const later = function() {
-                        timeout = null;
-                        if (!immediate) func.apply(context, args);
-                    };
-                    const callNow = immediate && !timeout;
-                    clearTimeout(timeout);
-                    timeout = setTimeout(later, wait);
-                    if (callNow) func.apply(context, args);
-                };
-            },
-            wrapElement : function(wrapper, elms) {
-                // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
-                // Convert `elms` to an array, if necessary.
-                if (!elms.length) elms = [elms];
-
-                // Loops backwards to prevent having to clone the wrapper on the
-                // first element (see `child` below).
-                for (var i = elms.length - 1; i >= 0; i--) {
-                    var child = (i > 0) ? wrapper.cloneNode(true) : wrapper;
-                    var el    = elms[i];
-
-                    // Cache the current parent and sibling.
-                    var parent  = el.parentNode;
-                    var sibling = el.nextSibling;
-
-                    // Wrap the element (is automatically removed from its current
-                    // parent).
-                    child.appendChild(el);
-
-                    // If the element had a sibling, insert the wrapper before
-                    // the sibling to maintain the HTML structure; otherwise, just
-                    // append it to the parent.
-                    if (sibling) {
-                        parent.insertBefore(child, sibling);
-                    } else {
-                        parent.appendChild(child);
-                    }
-                }
-            }
-        };
-
         init() {
             const $images = this.element.querySelectorAll(this.options.selector);
 
@@ -135,7 +87,7 @@
 
         prepareImage($image) {
             const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-            const dimensions = getImageDimensions($image);
+            const dimensions = this.__getImageDimensions($image);
             const shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
             let $wrapper;
 
@@ -150,7 +102,7 @@
                 $image.style.width = `${dimensions.width}px`;
                 $image.style.height = `${dimensions.height}px`;
 
-                this.utils.wrapElement($wrapper, $image);
+                this.__wrapElement($wrapper, $image);
             }
 
             $image.onload = function() {
@@ -162,55 +114,20 @@
             }.bind(this);
 
             const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
-            const scrollHandler = this.utils.debounce(function() {
+            const scrollHandler = this.__debounce(function() {
                 const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
 
                 if (isLoaded) {
                     window.removeEventListener('scroll', scrollHandler);
                 }
-
             }.bind(this), 50);
 
             if (!isLoaded) {
                 window.addEventListener('scroll', scrollHandler);
             }
-
-            function getImageDimensions($image) {
-                const styles = window.getComputedStyle($image);
-                let maxWidth = styles.getPropertyValue('max-width');
-                let width = $image.getAttribute('width');
-                let height = $image.getAttribute('height');
-                const aspectRatio = width / height;
-
-                if (maxWidth) {
-                    if (maxWidth.indexOf('%') > -1) {
-                        const fraction = Number(maxWidth.replace('%', '')) / 100;
-                        const parentStyles = window.getComputedStyle($image.parentElement);
-                        const parentWidth = parentStyles.getPropertyValue('width');
-
-                        maxWidth = Number(parentWidth.replace('px', '')) * fraction;
-                    }
-                    else if (maxWidth.indexOf('px') > -1) {
-                        maxWidth = maxWidth.replace('px', '');
-                    }
-
-                    if (Number(width) > Number(maxWidth)) {
-                        width = maxWidth;
-                        height = maxWidth / aspectRatio;
-                    }
-                }
-
-                return {
-                    width : width,
-                    height : height,
-                    maxWidth : maxWidth,
-                    aspectRatio : aspectRatio,
-                };
-            }
         }
 
         tryLoadImage($image, scrollTop) {
-
             let type;
 
             if ($image.offsetTop > scrollTop) return false;
@@ -225,6 +142,86 @@
 
             this.__loadImageByType($image, type);
             return true;
+        }
+
+        __debounce(func, wait, immediate) {
+            // https://davidwalsh.name/javascript-debounce-function
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                const later = function() {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                const callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
+            };
+        }
+
+        __wrapElement(wrapper, elms) {
+            // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
+            // Convert `elms` to an array, if necessary.
+            if (!elms.length) elms = [elms];
+
+            // Loops backwards to prevent having to clone the wrapper on the
+            // first element (see `child` below).
+            for (var i = elms.length - 1; i >= 0; i--) {
+                var child = (i > 0) ? wrapper.cloneNode(true) : wrapper;
+                var el    = elms[i];
+
+                // Cache the current parent and sibling.
+                var parent  = el.parentNode;
+                var sibling = el.nextSibling;
+
+                // Wrap the element (is automatically removed from its current
+                // parent).
+                child.appendChild(el);
+
+                // If the element had a sibling, insert the wrapper before
+                // the sibling to maintain the HTML structure; otherwise, just
+                // append it to the parent.
+                if (sibling) {
+                    parent.insertBefore(child, sibling);
+                } else {
+                    parent.appendChild(child);
+                }
+            }
+        }
+
+        __getImageDimensions($image) {
+            const styles = window.getComputedStyle($image);
+            let maxWidth = styles.getPropertyValue('max-width');
+            let width = $image.getAttribute('width');
+            let height = $image.getAttribute('height');
+            const aspectRatio = width / height;
+
+            if (maxWidth) {
+                if (maxWidth.indexOf('%') > -1) {
+                    const fraction = Number(maxWidth.replace('%', '')) / 100;
+                    const parentStyles = window.getComputedStyle($image.parentElement);
+                    const parentWidth = parentStyles.getPropertyValue('width');
+
+                    maxWidth = Number(parentWidth.replace('px', '')) * fraction;
+                }
+                else if (maxWidth.indexOf('px') > -1) {
+                    maxWidth = maxWidth.replace('px', '');
+                }
+
+                if (Number(width) > Number(maxWidth)) {
+                    width = maxWidth;
+                    height = maxWidth / aspectRatio;
+                }
+            }
+
+            return {
+                width : width,
+                height : height,
+                maxWidth : maxWidth,
+                aspectRatio : aspectRatio,
+            };
         }
 
         __loadImageByType($image, type) {

@@ -78,54 +78,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function Plugin(element, options) {
             _classCallCheck(this, Plugin);
 
-            this.utils = {
-                debounce: function debounce(func, wait, immediate) {
-                    // https://davidwalsh.name/javascript-debounce-function
-                    var timeout = void 0;
-                    return function () {
-                        var context = this;
-                        var args = arguments;
-                        var later = function later() {
-                            timeout = null;
-                            if (!immediate) func.apply(context, args);
-                        };
-                        var callNow = immediate && !timeout;
-                        clearTimeout(timeout);
-                        timeout = setTimeout(later, wait);
-                        if (callNow) func.apply(context, args);
-                    };
-                },
-                wrapElement: function wrapElement(wrapper, elms) {
-                    // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
-                    // Convert `elms` to an array, if necessary.
-                    if (!elms.length) elms = [elms];
-
-                    // Loops backwards to prevent having to clone the wrapper on the
-                    // first element (see `child` below).
-                    for (var i = elms.length - 1; i >= 0; i--) {
-                        var child = i > 0 ? wrapper.cloneNode(true) : wrapper;
-                        var el = elms[i];
-
-                        // Cache the current parent and sibling.
-                        var parent = el.parentNode;
-                        var sibling = el.nextSibling;
-
-                        // Wrap the element (is automatically removed from its current
-                        // parent).
-                        child.appendChild(el);
-
-                        // If the element had a sibling, insert the wrapper before
-                        // the sibling to maintain the HTML structure; otherwise, just
-                        // append it to the parent.
-                        if (sibling) {
-                            parent.insertBefore(child, sibling);
-                        } else {
-                            parent.appendChild(child);
-                        }
-                    }
-                }
-            };
-
             this.element = element;
             this._defaults = defaults;
             this._name = pluginName;
@@ -149,7 +101,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             key: 'prepareImage',
             value: function prepareImage($image) {
                 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-                var dimensions = getImageDimensions($image);
+                var dimensions = this.__getImageDimensions($image);
                 var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
 
@@ -164,7 +116,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     $image.style.width = dimensions.width + 'px';
                     $image.style.height = dimensions.height + 'px';
 
-                    this.utils.wrapElement($wrapper, $image);
+                    this.__wrapElement($wrapper, $image);
                 }
 
                 $image.onload = function () {
@@ -176,7 +128,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }.bind(this);
 
                 var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
-                var scrollHandler = this.utils.debounce(function () {
+                var scrollHandler = this.__debounce(function () {
                     var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
 
                     if (isLoaded) {
@@ -187,43 +139,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 if (!isLoaded) {
                     window.addEventListener('scroll', scrollHandler);
                 }
-
-                function getImageDimensions($image) {
-                    var styles = window.getComputedStyle($image);
-                    var maxWidth = styles.getPropertyValue('max-width');
-                    var width = $image.getAttribute('width');
-                    var height = $image.getAttribute('height');
-                    var aspectRatio = width / height;
-
-                    if (maxWidth) {
-                        if (maxWidth.indexOf('%') > -1) {
-                            var fraction = Number(maxWidth.replace('%', '')) / 100;
-                            var parentStyles = window.getComputedStyle($image.parentElement);
-                            var parentWidth = parentStyles.getPropertyValue('width');
-
-                            maxWidth = Number(parentWidth.replace('px', '')) * fraction;
-                        } else if (maxWidth.indexOf('px') > -1) {
-                            maxWidth = maxWidth.replace('px', '');
-                        }
-
-                        if (Number(width) > Number(maxWidth)) {
-                            width = maxWidth;
-                            height = maxWidth / aspectRatio;
-                        }
-                    }
-
-                    return {
-                        width: width,
-                        height: height,
-                        maxWidth: maxWidth,
-                        aspectRatio: aspectRatio
-                    };
-                }
             }
         }, {
             key: 'tryLoadImage',
             value: function tryLoadImage($image, scrollTop) {
-
                 var type = void 0;
 
                 if ($image.offsetTop > scrollTop) return false;
@@ -238,6 +157,88 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 this.__loadImageByType($image, type);
                 return true;
+            }
+        }, {
+            key: '__debounce',
+            value: function __debounce(func, wait, immediate) {
+                // https://davidwalsh.name/javascript-debounce-function
+                var timeout = void 0;
+                return function () {
+                    var context = this;
+                    var args = arguments;
+                    var later = function later() {
+                        timeout = null;
+                        if (!immediate) func.apply(context, args);
+                    };
+                    var callNow = immediate && !timeout;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                    if (callNow) func.apply(context, args);
+                };
+            }
+        }, {
+            key: '__wrapElement',
+            value: function __wrapElement(wrapper, elms) {
+                // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
+                // Convert `elms` to an array, if necessary.
+                if (!elms.length) elms = [elms];
+
+                // Loops backwards to prevent having to clone the wrapper on the
+                // first element (see `child` below).
+                for (var i = elms.length - 1; i >= 0; i--) {
+                    var child = i > 0 ? wrapper.cloneNode(true) : wrapper;
+                    var el = elms[i];
+
+                    // Cache the current parent and sibling.
+                    var parent = el.parentNode;
+                    var sibling = el.nextSibling;
+
+                    // Wrap the element (is automatically removed from its current
+                    // parent).
+                    child.appendChild(el);
+
+                    // If the element had a sibling, insert the wrapper before
+                    // the sibling to maintain the HTML structure; otherwise, just
+                    // append it to the parent.
+                    if (sibling) {
+                        parent.insertBefore(child, sibling);
+                    } else {
+                        parent.appendChild(child);
+                    }
+                }
+            }
+        }, {
+            key: '__getImageDimensions',
+            value: function __getImageDimensions($image) {
+                var styles = window.getComputedStyle($image);
+                var maxWidth = styles.getPropertyValue('max-width');
+                var width = $image.getAttribute('width');
+                var height = $image.getAttribute('height');
+                var aspectRatio = width / height;
+
+                if (maxWidth) {
+                    if (maxWidth.indexOf('%') > -1) {
+                        var fraction = Number(maxWidth.replace('%', '')) / 100;
+                        var parentStyles = window.getComputedStyle($image.parentElement);
+                        var parentWidth = parentStyles.getPropertyValue('width');
+
+                        maxWidth = Number(parentWidth.replace('px', '')) * fraction;
+                    } else if (maxWidth.indexOf('px') > -1) {
+                        maxWidth = maxWidth.replace('px', '');
+                    }
+
+                    if (Number(width) > Number(maxWidth)) {
+                        width = maxWidth;
+                        height = maxWidth / aspectRatio;
+                    }
+                }
+
+                return {
+                    width: width,
+                    height: height,
+                    maxWidth: maxWidth,
+                    aspectRatio: aspectRatio
+                };
             }
         }, {
             key: '__loadImageByType',
