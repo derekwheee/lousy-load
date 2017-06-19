@@ -172,7 +172,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     if (this.options.wrapElement) {
                         $wrapper.classList.add('is-loaded');
                     }
-                };
+                }.bind(this);
 
                 var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
                 var scrollHandler = this.utils.debounce(function () {

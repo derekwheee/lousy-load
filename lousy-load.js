@@ -158,7 +158,7 @@
                 if (this.options.wrapElement) {
                     $wrapper.classList.add('is-loaded');
                 }
-            };
+            }.bind(this);
 
             const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
             const scrollHandler = this.utils.debounce(function() {
