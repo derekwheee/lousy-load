@@ -25,9 +25,7 @@
     "test": "nyc ava",
     "report": "nyc report --reporter=html"
   },
-  "dependencies": {
-    "global": "^4.3.2"
-  },
+  "dependencies": {},
   "ava": {
     "require": [
       "./test/helpers/setup-browser-env.js"
