@@ -29,5 +29,6 @@
     "require": [
       "./test/helpers/setup-browser-env.js"
     ]
-  }
+  },
+  "false": {}
 }
