@@ -2,7 +2,7 @@
   "name": "lousy-load",
   "version": "0.1.0",
   "description": "A lazy loader for the future",
-  "main": "lousy-loader.js",
+  "main": "./dist/lousy-loader.js",
   "repository": "https://github.com/frxnz/lousy-load.git",
   "author": "Derek Wheelden <derek.wheelden@gmail.com>",
   "license": "MIT",

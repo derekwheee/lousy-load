@@ -28,7 +28,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     var defaults = {
         immediate: true,
-        selector: '',
+        selector: 'img',
         threshold: 100,
         wrapElement: true
     };
@@ -139,7 +139,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _createClass(Plugin, [{
             key: 'init',
             value: function init() {
-                var $images = this.element.querySelectorAll('img' + this.options.selector);
+                var $images = this.element.querySelectorAll(this.options.selector);
 
                 $images.forEach(this.prepareImage.bind(this));
 
@@ -150,9 +150,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function prepareImage($image) {
                 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
                 var dimensions = getImageDimensions($image);
+                var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
 
-                if (this.options.wrapElement) {
+                if (shouldWrap) {
                     $wrapper = document.createElement('span');
                     $wrapper.classList.add('ll-image_wrapper');
                     $wrapper.style.width = dimensions.width + 'px';
@@ -169,7 +170,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 $image.onload = function () {
                     $image.parentElement.classList.add('is-loaded');
 
-                    if (this.options.wrapElement) {
+                    if (shouldWrap) {
                         $wrapper.classList.add('is-loaded');
                     }
                 }.bind(this);
@@ -222,12 +223,37 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'tryLoadImage',
             value: function tryLoadImage($image, scrollTop) {
-                if ($image.offsetTop < scrollTop) {
-                    $image.src = $image.getAttribute('data-src');
-                    return true;
+
+                var type = void 0;
+
+                if ($image.offsetTop > scrollTop) return false;
+
+                if ($image.nodeName !== 'IMG') {
+                    type = 'background';
+                } else if ($image.getAttribute('data-srcset')) {
+                    type = 'srcset';
+                } else {
+                    type = 'src';
                 }
 
-                return false;
+                this.__loadImageByType($image, type);
+                return true;
+            }
+        }, {
+            key: '__loadImageByType',
+            value: function __loadImageByType($image, type) {
+                switch (type) {
+                    case 'srcset':
+                        $image.srcset = $image.getAttribute('data-srcset');
+                        $image.src = $image.getAttribute('data-src');
+                        break;
+                    case 'background':
+                        $image.style.removeProperty('background');
+                        break;
+                    default:
+                        $image.src = $image.getAttribute('data-src');
+                        break;
+                }
             }
         }]);
 

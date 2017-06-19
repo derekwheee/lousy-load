@@ -1,0 +1,27 @@
+.ll-demo {
+    max-width: 50em;
+    margin: 0 auto;
+}
+
+.ll-image_wrapper {
+    display: block !important;
+    margin-bottom: 1em;
+}
+
+.ll-demo img {
+    display: block;
+    max-width: 100%;
+}
+
+.ll-demo .responsive-background-image {
+    width: 100%;
+    margin-bottom: 1em;
+    padding-bottom: 75%;
+    background-size: cover;
+    background-position: center;
+}
+
+#SVTOFOXL { background-image: url('../resources/1600x1200.jpg'); }
+@media (max-width: 1920px) { #SVTOFOXL { background-image: url('../resources/3200x2400.jpg'); } }
+@media (max-width: 1024px) { #SVTOFOXL { background-image: url('../resources/1600x1200.jpg'); } }
+@media (max-width: 480px) { #SVTOFOXL { background-image: url('../resources/800x600.jpg'); } }

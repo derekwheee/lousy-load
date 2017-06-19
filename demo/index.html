@@ -6,31 +6,24 @@
         <title>Lousy Load Demo</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            .ll-demo {
-                max-width: 50em;
-                margin: 0 auto;
-            }
-
-            .ll-demo img {
-                max-width: 100%;
-            }
-        </style>
+        <link rel="stylesheet" href="../resources/style.css">
     </head>
     <body>
         <div class="ll-demo">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
-            <img data-src="../resources/1600x1200.jpg" width="1600" height="1200">
+            <img class="ll-image" data-src="../resources/1600x1200.jpg" width="1600" height="1200">
+            <img class="ll-image" data-src="../resources/1600x1200.jpg" width="1600" height="1200">
+            <img class="ll-image" data-src="../resources/1600x1200.jpg" width="1600" height="1200">
+            <img
+                class="ll-image"
+                data-src="../resources/800x600.jpg"
+                data-srcset="../resources/800x600.jpg 800w, ../resources/1600x1200.jpg 1600w, ../resources/3200x2400.jpg 3200w"
+                width="3200" height="2400">
+            <div id="SVTOFOXL" class="ll-image responsive-background-image" title="Lodge Bistro" style="background: none;" data-nowrap></div>
         </div>
 
         <script src="../dist/lousy-load.js"></script>
         <script>
-            var ll = new lousyLoad(document.querySelector('.ll-demo'));
+            var ll = new lousyLoad(document.querySelector('.ll-demo'), { selector : '.ll-image' });
         </script>
     </body>
 </html>
