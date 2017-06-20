@@ -145,7 +145,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function tryLoadImage($image, scrollTop) {
                 var type = void 0;
 
-                if ($image.offsetTop > scrollTop) return false;
+                if ($image.getBoundingClientRect().top > scrollTop) return false;
 
                 if ($image.nodeName !== 'IMG') {
                     type = 'background';

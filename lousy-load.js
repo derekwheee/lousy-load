@@ -130,7 +130,7 @@
         tryLoadImage($image, scrollTop) {
             let type;
 
-            if ($image.offsetTop > scrollTop) return false;
+            if ($image.getBoundingClientRect().top > scrollTop) return false;
 
             if ($image.nodeName !== 'IMG') {
                 type = 'background';
