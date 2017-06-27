@@ -21,7 +21,7 @@
     const defaults = {
         immediate : true,
         selector : 'img',
-        threshold : 100,
+        threshold : 0,
         wrapElement : true,
     };
 
@@ -59,6 +59,29 @@
         };
     }
 
+    class LousyImage {
+        constructor(element) {
+            this.__data = {};
+            this.__element = element;
+        }
+
+        get el() {
+            return this.__element;
+        }
+
+        data(key, value) {
+            if (!key) {
+                return this.__data;
+            }
+
+            if (!value) {
+                return this.__data[key];
+            }
+
+            this.__data[key] = value;
+        }
+    }
+
     /**
      * Plugin class
      * @param {Node} element The html element to initialize
@@ -85,11 +108,16 @@
             return $images;
         }
 
-        prepareImage($image) {
+        prepareImage(element) {
+            const image = new LousyImage(element);
+            const $image = image.el;
+
             const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             const dimensions = this.__getImageDimensions($image);
             const shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
             let $wrapper;
+
+            image.data('shouldWrap', shouldWrap);
 
             if (shouldWrap) {
                 $wrapper = document.createElement('span');
@@ -103,19 +131,12 @@
                 $image.style.height = `${dimensions.height}px`;
 
                 this.__wrapElement($wrapper, $image);
+                image.data('wrapper', $wrapper);
             }
 
-            $image.onload = function() {
-                $image.parentElement.classList.add('is-loaded');
-
-                if (shouldWrap) {
-                    $wrapper.classList.add('is-loaded');
-                }
-            }.bind(this);
-
-            const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+            const isLoaded = this.tryLoadImage(image);
             const scrollHandler = this.__debounce(function() {
-                const isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+                const isLoaded = this.tryLoadImage(image);
 
                 if (isLoaded) {
                     window.removeEventListener('scroll', scrollHandler);
@@ -125,12 +146,16 @@
             if (!isLoaded) {
                 window.addEventListener('scroll', scrollHandler);
             }
+
+            return image;
         }
 
-        tryLoadImage($image, scrollTop) {
+        tryLoadImage(image, _top) {
+            const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+            const $image = image.el;
             let type;
 
-            if ($image.getBoundingClientRect().top > scrollTop) return false;
+            if ((_top || $image.getBoundingClientRect().top) > viewportHeight + this.options.threshold) return false;
 
             if ($image.nodeName !== 'IMG') {
                 type = 'background';
@@ -140,7 +165,10 @@
                 type = 'src';
             }
 
-            this.__loadImageByType($image, type);
+            image.data('type', type);
+
+            this.__loadImageByType(image, type);
+
             return true;
         }
 
@@ -193,9 +221,10 @@
 
         __getImageDimensions($image) {
             const styles = window.getComputedStyle($image);
-            let maxWidth = styles.getPropertyValue('max-width');
-            let width = $image.getAttribute('width');
-            let height = $image.getAttribute('height');
+            // Width and height need to be computed differently for images and background images
+            let width = $image.nodeName === 'IMG' ? Number($image.getAttribute('width')) : $image.offsetWidth;
+            let height = $image.nodeName === 'IMG' ? Number($image.getAttribute('height')) : $image.offsetHeight;
+            let maxWidth = styles.getPropertyValue('max-width') === 'none' ? null : styles.getPropertyValue('max-width');
             const aspectRatio = width / height;
 
             if (maxWidth) {
@@ -207,13 +236,15 @@
                     maxWidth = Number(parentWidth.replace('px', '')) * fraction;
                 }
                 else if (maxWidth.indexOf('px') > -1) {
-                    maxWidth = maxWidth.replace('px', '');
+                    maxWidth = Number(maxWidth.replace('px', ''));
                 }
 
                 if (Number(width) > Number(maxWidth)) {
                     width = maxWidth;
                     height = maxWidth / aspectRatio;
                 }
+            } else {
+                maxWidth = width;
             }
 
             return {
@@ -224,19 +255,55 @@
             };
         }
 
-        __loadImageByType($image, type) {
+        __attachLoadEvent(image, $wrapper, shouldWrap) {
+            const $image = image.el;
+
+            $wrapper = $wrapper || image.data('wrapper');
+            shouldWrap = shouldWrap || image.data('shouldWrap');
+
+            if ($image.nodeName === 'IMG') {
+                $image.onload = loadHandler.bind(this);
+                return;
+            }
+
+            const styles = window.getComputedStyle($image);
+            const src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+            const img = new Image();
+            img.onload = loadHandler.bind(this);
+            img.src = src;
+
+            if (img.complete) loadHandler();
+
+            function loadHandler() {
+                $image.classList.add('is-loaded');
+
+                if (shouldWrap) {
+                    $wrapper.classList.add('is-loaded');
+                }
+            }
+        }
+
+        __loadImageByType(image, type) {
+            const $image = image.el;
+
             switch(type) {
                 case 'srcset':
                     $image.srcset = $image.getAttribute('data-srcset');
                     $image.src = $image.getAttribute('data-src');
                     break;
                 case 'background':
-                    $image.style.removeProperty('background');
+                    if (this.options.backgroundClass) {
+                        $image.classList.remove(this.options.backgroundClass.replace(/^\./, ''));
+                    } else {
+                        $image.style.removeProperty('background');
+                    }
                     break;
                 default:
                     $image.src = $image.getAttribute('data-src');
                     break;
             }
+
+            this.__attachLoadEvent(image);
         }
     }
 

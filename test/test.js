@@ -101,8 +101,22 @@ test('image dimensions', t => {
     const image = t.context.container.querySelector('img');
     const dimensions = ll.__getImageDimensions(image);
 
-    t.is(dimensions.width, '1600');
-    t.is(dimensions.height, '1200');
+    t.is(dimensions.width, 1600);
+    t.is(dimensions.height, 1200);
+    t.is(dimensions.maxWidth, 1600);
+    t.is(dimensions.aspectRatio, 4 / 3);
+
+});
+
+test('image dimensions max-width "none"', t => {
+    const ll = new lousyLoad(t.context.container);
+    const image = t.context.container.querySelector('img');
+    image.style.maxWidth = 'none';
+
+    const dimensions = ll.__getImageDimensions(image);
+
+    t.is(dimensions.width, 1600);
+    t.is(dimensions.height, 1200);
     t.is(dimensions.maxWidth, 1600);
     t.is(dimensions.aspectRatio, 4 / 3);
 
@@ -152,6 +166,16 @@ test('image max-width %', t => {
     t.is(image.parentElement.style.height, '600px');
 });
 
+test('image max-width none', t => {
+    const image = t.context.container.querySelector('img');
+    image.style.maxWidth = 'none';
+
+    const ll = new lousyLoad(t.context.container);
+
+    t.is(image.parentElement.style.width, '1600px');
+    t.is(image.parentElement.style.height, '1200px');
+});
+
 test('image src', async t => {
     const ll = new lousyLoad(t.context.container);
     const image = t.context.container.querySelector('img');
@@ -161,40 +185,59 @@ test('image src', async t => {
 
 test('try load image', t => {
 
-    const ll = new lousyLoad(t.context.container);
-    const image = t.context.container.querySelector('img.ll-src');
+    const ll = new lousyLoad(t.context.container, { immediate : false });
+    const imageEl = t.context.container.querySelector('img.ll-src');
+    const image = ll.prepareImage(imageEl);
     const spy = sinon.spy(ll, '__loadImageByType');
 
-    t.false(ll.tryLoadImage(image, -1000));
-    t.true(ll.tryLoadImage(image, 1000));
-    t.truthy(image.src);
+    t.false(ll.tryLoadImage(image, 769));
+    t.true(ll.tryLoadImage(image, 767));
+    t.truthy(imageEl.src);
     t.true(spy.withArgs(image, 'src').calledOnce);
 
 });
 
 test('try load image srcset', t => {
 
-    const ll = new lousyLoad(t.context.container);
-    const image = t.context.container.querySelector('img.ll-srcset');
+    const ll = new lousyLoad(t.context.container, { immediate : false });
+    const imageEl = t.context.container.querySelector('img.ll-srcset');
+    const image = ll.prepareImage(imageEl);
     const spy = sinon.spy(ll, '__loadImageByType');
 
-    t.false(ll.tryLoadImage(image, -1000));
-    t.true(ll.tryLoadImage(image, 1000));
-    t.truthy(image.src);
-    t.truthy(image.srcset);
+    t.false(ll.tryLoadImage(image, 769));
+    t.true(ll.tryLoadImage(image, 767));
+    t.true(ll.tryLoadImage(image, 0));
+    t.truthy(imageEl.src);
+    t.truthy(imageEl.srcset);
+    t.true(spy.withArgs(image, 'srcset').calledTwice);
+
+});
+
+test('try load image threshold', t => {
+
+    const ll = new lousyLoad(t.context.container, { threshold : -100, immediate : false });
+    const imageEl = t.context.container.querySelector('img.ll-srcset');
+    const image = ll.prepareImage(imageEl);
+    const spy = sinon.spy(ll, '__loadImageByType');
+
+    t.false(ll.tryLoadImage(image, 669));
+    t.true(ll.tryLoadImage(image, 667));
+    t.truthy(imageEl.src);
+    t.truthy(imageEl.srcset);
     t.true(spy.withArgs(image, 'srcset').calledOnce);
 
 });
 
 test('try load image background', t => {
 
-    const ll = new lousyLoad(t.context.container, { selector : '.ll-image' });
-    const image = t.context.container.querySelector('.responsive-background-image');
+    const ll = new lousyLoad(t.context.container, { selector : '.ll-image', immediate : false });
+    const imageEl = t.context.container.querySelector('.responsive-background-image');
+    const image = ll.prepareImage(imageEl);
     const spy = sinon.spy(ll, '__loadImageByType');
 
-    t.false(ll.tryLoadImage(image, -1000));
-    t.true(ll.tryLoadImage(image, 1000));
-    t.falsy(image.getAttribute('style'));
+    t.false(ll.tryLoadImage(image, 769));
+    t.true(ll.tryLoadImage(image, 767));
+    t.falsy(imageEl.getAttribute('style'));
     t.true(spy.withArgs(image, 'background').calledOnce);
 
 });

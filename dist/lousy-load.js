@@ -29,7 +29,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     var defaults = {
         immediate: true,
         selector: 'img',
-        threshold: 100,
+        threshold: 0,
         wrapElement: true
     };
 
@@ -67,12 +67,44 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     }
 
+    var LousyImage = function () {
+        function LousyImage(element) {
+            _classCallCheck(this, LousyImage);
+
+            this.__data = {};
+            this.__element = element;
+        }
+
+        _createClass(LousyImage, [{
+            key: 'data',
+            value: function data(key, value) {
+                if (!key) {
+                    return this.__data;
+                }
+
+                if (!value) {
+                    return this.__data[key];
+                }
+
+                this.__data[key] = value;
+            }
+        }, {
+            key: 'el',
+            get: function get() {
+                return this.__element;
+            }
+        }]);
+
+        return LousyImage;
+    }();
+
     /**
      * Plugin class
      * @param {Node} element The html element to initialize
      * @param {Object} options User options
      * @constructor
      */
+
 
     var Plugin = function () {
         function Plugin(element, options) {
@@ -99,11 +131,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
         }, {
             key: 'prepareImage',
-            value: function prepareImage($image) {
+            value: function prepareImage(element) {
+                var image = new LousyImage(element);
+                var $image = image.el;
+
                 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
                 var dimensions = this.__getImageDimensions($image);
                 var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
+
+                image.data('shouldWrap', shouldWrap);
 
                 if (shouldWrap) {
                     $wrapper = document.createElement('span');
@@ -117,19 +154,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     $image.style.height = dimensions.height + 'px';
 
                     this.__wrapElement($wrapper, $image);
+                    image.data('wrapper', $wrapper);
                 }
 
-                $image.onload = function () {
-                    $image.parentElement.classList.add('is-loaded');
-
-                    if (shouldWrap) {
-                        $wrapper.classList.add('is-loaded');
-                    }
-                }.bind(this);
-
-                var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+                var isLoaded = this.tryLoadImage(image);
                 var scrollHandler = this.__debounce(function () {
-                    var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+                    var isLoaded = this.tryLoadImage(image);
 
                     if (isLoaded) {
                         window.removeEventListener('scroll', scrollHandler);
@@ -139,13 +169,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 if (!isLoaded) {
                     window.addEventListener('scroll', scrollHandler);
                 }
+
+                return image;
             }
         }, {
             key: 'tryLoadImage',
-            value: function tryLoadImage($image, scrollTop) {
+            value: function tryLoadImage(image, _top) {
+                var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                var $image = image.el;
                 var type = void 0;
 
-                if ($image.getBoundingClientRect().top > scrollTop) return false;
+                if ((_top || $image.getBoundingClientRect().top) > viewportHeight + this.options.threshold) return false;
 
                 if ($image.nodeName !== 'IMG') {
                     type = 'background';
@@ -155,7 +189,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     type = 'src';
                 }
 
-                this.__loadImageByType($image, type);
+                image.data('type', type);
+
+                this.__loadImageByType(image, type);
+
                 return true;
             }
         }, {
@@ -211,9 +248,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             key: '__getImageDimensions',
             value: function __getImageDimensions($image) {
                 var styles = window.getComputedStyle($image);
-                var maxWidth = styles.getPropertyValue('max-width');
-                var width = $image.getAttribute('width');
-                var height = $image.getAttribute('height');
+                // Width and height need to be computed differently for images and background images
+                var width = $image.nodeName === 'IMG' ? Number($image.getAttribute('width')) : $image.offsetWidth;
+                var height = $image.nodeName === 'IMG' ? Number($image.getAttribute('height')) : $image.offsetHeight;
+                var maxWidth = styles.getPropertyValue('max-width') === 'none' ? null : styles.getPropertyValue('max-width');
                 var aspectRatio = width / height;
 
                 if (maxWidth) {
@@ -224,13 +262,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                         maxWidth = Number(parentWidth.replace('px', '')) * fraction;
                     } else if (maxWidth.indexOf('px') > -1) {
-                        maxWidth = maxWidth.replace('px', '');
+                        maxWidth = Number(maxWidth.replace('px', ''));
                     }
 
                     if (Number(width) > Number(maxWidth)) {
                         width = maxWidth;
                         height = maxWidth / aspectRatio;
                     }
+                } else {
+                    maxWidth = width;
                 }
 
                 return {
@@ -241,20 +281,57 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 };
             }
         }, {
+            key: '__attachLoadEvent',
+            value: function __attachLoadEvent(image, $wrapper, shouldWrap) {
+                var $image = image.el;
+
+                $wrapper = $wrapper || image.data('wrapper');
+                shouldWrap = shouldWrap || image.data('shouldWrap');
+
+                if ($image.nodeName === 'IMG') {
+                    $image.onload = loadHandler.bind(this);
+                    return;
+                }
+
+                var styles = window.getComputedStyle($image);
+                var src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+                var img = new Image();
+                img.onload = loadHandler.bind(this);
+                img.src = src;
+
+                if (img.complete) loadHandler();
+
+                function loadHandler() {
+                    $image.classList.add('is-loaded');
+
+                    if (shouldWrap) {
+                        $wrapper.classList.add('is-loaded');
+                    }
+                }
+            }
+        }, {
             key: '__loadImageByType',
-            value: function __loadImageByType($image, type) {
+            value: function __loadImageByType(image, type) {
+                var $image = image.el;
+
                 switch (type) {
                     case 'srcset':
                         $image.srcset = $image.getAttribute('data-srcset');
                         $image.src = $image.getAttribute('data-src');
                         break;
                     case 'background':
-                        $image.style.removeProperty('background');
+                        if (this.options.backgroundClass) {
+                            $image.classList.remove(this.options.backgroundClass.replace(/^\./, ''));
+                        } else {
+                            $image.style.removeProperty('background');
+                        }
                         break;
                     default:
                         $image.src = $image.getAttribute('data-src');
                         break;
                 }
+
+                this.__attachLoadEvent(image);
             }
         }]);
 
