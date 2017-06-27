@@ -28,8 +28,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     var defaults = {
         immediate: true,
-        selector: '',
-        threshold: 100,
+        selector: 'img',
+        threshold: 0,
         wrapElement: true
     };
 
@@ -67,6 +67,37 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     }
 
+    var LousyImage = function () {
+        function LousyImage(element) {
+            _classCallCheck(this, LousyImage);
+
+            this.__data = {};
+            this.__element = element;
+        }
+
+        _createClass(LousyImage, [{
+            key: 'data',
+            value: function data(key, value) {
+                if (!key) {
+                    return this.__data;
+                }
+
+                if (!value) {
+                    return this.__data[key];
+                }
+
+                this.__data[key] = value;
+            }
+        }, {
+            key: 'el',
+            get: function get() {
+                return this.__element;
+            }
+        }]);
+
+        return LousyImage;
+    }();
+
     /**
      * Plugin class
      * @param {Node} element The html element to initialize
@@ -74,57 +105,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
      * @constructor
      */
 
+
     var Plugin = function () {
         function Plugin(element, options) {
             _classCallCheck(this, Plugin);
-
-            this.utils = {
-                debounce: function debounce(func, wait, immediate) {
-                    // https://davidwalsh.name/javascript-debounce-function
-                    var timeout = void 0;
-                    return function () {
-                        var context = this;
-                        var args = arguments;
-                        var later = function later() {
-                            timeout = null;
-                            if (!immediate) func.apply(context, args);
-                        };
-                        var callNow = immediate && !timeout;
-                        clearTimeout(timeout);
-                        timeout = setTimeout(later, wait);
-                        if (callNow) func.apply(context, args);
-                    };
-                },
-                wrapElement: function wrapElement(wrapper, elms) {
-                    // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
-                    // Convert `elms` to an array, if necessary.
-                    if (!elms.length) elms = [elms];
-
-                    // Loops backwards to prevent having to clone the wrapper on the
-                    // first element (see `child` below).
-                    for (var i = elms.length - 1; i >= 0; i--) {
-                        var child = i > 0 ? wrapper.cloneNode(true) : wrapper;
-                        var el = elms[i];
-
-                        // Cache the current parent and sibling.
-                        var parent = el.parentNode;
-                        var sibling = el.nextSibling;
-
-                        // Wrap the element (is automatically removed from its current
-                        // parent).
-                        child.appendChild(el);
-
-                        // If the element had a sibling, insert the wrapper before
-                        // the sibling to maintain the HTML structure; otherwise, just
-                        // append it to the parent.
-                        if (sibling) {
-                            parent.insertBefore(child, sibling);
-                        } else {
-                            parent.appendChild(child);
-                        }
-                    }
-                }
-            };
 
             this.element = element;
             this._defaults = defaults;
@@ -139,7 +123,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _createClass(Plugin, [{
             key: 'init',
             value: function init() {
-                var $images = this.element.querySelectorAll('img' + this.options.selector);
+                var $images = this.element.querySelectorAll(this.options.selector);
 
                 $images.forEach(this.prepareImage.bind(this));
 
@@ -147,12 +131,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
         }, {
             key: 'prepareImage',
-            value: function prepareImage($image) {
+            value: function prepareImage(element) {
+                var image = new LousyImage(element);
+                var $image = image.el;
+
                 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-                var dimensions = getImageDimensions($image);
+                var dimensions = this.__getImageDimensions($image);
+                var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
 
-                if (this.options.wrapElement) {
+                image.data('shouldWrap', shouldWrap);
+
+                if (shouldWrap) {
                     $wrapper = document.createElement('span');
                     $wrapper.classList.add('ll-image_wrapper');
                     $wrapper.style.width = dimensions.width + 'px';
@@ -163,20 +153,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     $image.style.width = dimensions.width + 'px';
                     $image.style.height = dimensions.height + 'px';
 
-                    this.utils.wrapElement($wrapper, $image);
+                    this.__wrapElement($wrapper, $image);
+                    image.data('wrapper', $wrapper);
                 }
 
-                $image.onload = function () {
-                    $image.parentElement.classList.add('is-loaded');
-
-                    if (this.options.wrapElement) {
-                        $wrapper.classList.add('is-loaded');
-                    }
-                }.bind(this);
-
-                var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
-                var scrollHandler = this.utils.debounce(function () {
-                    var isLoaded = this.tryLoadImage($image, document.body.scrollTop + viewportHeight - this.options.threshold);
+                var isLoaded = this.tryLoadImage(image);
+                var scrollHandler = this.__debounce(function () {
+                    var isLoaded = this.tryLoadImage(image);
 
                     if (isLoaded) {
                         window.removeEventListener('scroll', scrollHandler);
@@ -187,47 +170,168 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     window.addEventListener('scroll', scrollHandler);
                 }
 
-                function getImageDimensions($image) {
-                    var styles = window.getComputedStyle($image);
-                    var maxWidth = styles.getPropertyValue('max-width');
-                    var width = $image.getAttribute('width');
-                    var height = $image.getAttribute('height');
-                    var aspectRatio = width / height;
-
-                    if (maxWidth) {
-                        if (maxWidth.indexOf('%') > -1) {
-                            var fraction = Number(maxWidth.replace('%', '')) / 100;
-                            var parentStyles = window.getComputedStyle($image.parentElement);
-                            var parentWidth = parentStyles.getPropertyValue('width');
-
-                            maxWidth = Number(parentWidth.replace('px', '')) * fraction;
-                        } else if (maxWidth.indexOf('px') > -1) {
-                            maxWidth = maxWidth.replace('px', '');
-                        }
-
-                        if (Number(width) > Number(maxWidth)) {
-                            width = maxWidth;
-                            height = maxWidth / aspectRatio;
-                        }
-                    }
-
-                    return {
-                        width: width,
-                        height: height,
-                        maxWidth: maxWidth,
-                        aspectRatio: aspectRatio
-                    };
-                }
+                return image;
             }
         }, {
             key: 'tryLoadImage',
-            value: function tryLoadImage($image, scrollTop) {
-                if ($image.offsetTop < scrollTop) {
-                    $image.src = $image.getAttribute('data-src');
-                    return true;
+            value: function tryLoadImage(image, _top) {
+                var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                var $image = image.el;
+                var type = void 0;
+
+                if ((_top || $image.getBoundingClientRect().top) > viewportHeight + this.options.threshold) return false;
+
+                if ($image.nodeName !== 'IMG') {
+                    type = 'background';
+                } else if ($image.getAttribute('data-srcset')) {
+                    type = 'srcset';
+                } else {
+                    type = 'src';
                 }
 
-                return false;
+                image.data('type', type);
+
+                this.__loadImageByType(image, type);
+
+                return true;
+            }
+        }, {
+            key: '__debounce',
+            value: function __debounce(func, wait, immediate) {
+                // https://davidwalsh.name/javascript-debounce-function
+                var timeout = void 0;
+                return function () {
+                    var context = this;
+                    var args = arguments;
+                    var later = function later() {
+                        timeout = null;
+                        if (!immediate) func.apply(context, args);
+                    };
+                    var callNow = immediate && !timeout;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                    if (callNow) func.apply(context, args);
+                };
+            }
+        }, {
+            key: '__wrapElement',
+            value: function __wrapElement(wrapper, elms) {
+                // https://stackoverflow.com/questions/3337587/wrapping-a-set-of-dom-elements-using-javascript/13169465#13169465
+                // Convert `elms` to an array, if necessary.
+                if (!elms.length) elms = [elms];
+
+                // Loops backwards to prevent having to clone the wrapper on the
+                // first element (see `child` below).
+                for (var i = elms.length - 1; i >= 0; i--) {
+                    var child = i > 0 ? wrapper.cloneNode(true) : wrapper;
+                    var el = elms[i];
+
+                    // Cache the current parent and sibling.
+                    var parent = el.parentNode;
+                    var sibling = el.nextSibling;
+
+                    // Wrap the element (is automatically removed from its current
+                    // parent).
+                    child.appendChild(el);
+
+                    // If the element had a sibling, insert the wrapper before
+                    // the sibling to maintain the HTML structure; otherwise, just
+                    // append it to the parent.
+                    if (sibling) {
+                        parent.insertBefore(child, sibling);
+                    } else {
+                        parent.appendChild(child);
+                    }
+                }
+            }
+        }, {
+            key: '__getImageDimensions',
+            value: function __getImageDimensions($image) {
+                var styles = window.getComputedStyle($image);
+                // Width and height need to be computed differently for images and background images
+                var width = $image.nodeName === 'IMG' ? Number($image.getAttribute('width')) : $image.offsetWidth;
+                var height = $image.nodeName === 'IMG' ? Number($image.getAttribute('height')) : $image.offsetHeight;
+                var maxWidth = styles.getPropertyValue('max-width') === 'none' ? null : styles.getPropertyValue('max-width');
+                var aspectRatio = width / height;
+
+                if (maxWidth) {
+                    if (maxWidth.indexOf('%') > -1) {
+                        var fraction = Number(maxWidth.replace('%', '')) / 100;
+                        var parentStyles = window.getComputedStyle($image.parentElement);
+                        var parentWidth = parentStyles.getPropertyValue('width');
+
+                        maxWidth = Number(parentWidth.replace('px', '')) * fraction;
+                    } else if (maxWidth.indexOf('px') > -1) {
+                        maxWidth = Number(maxWidth.replace('px', ''));
+                    }
+
+                    if (Number(width) > Number(maxWidth)) {
+                        width = maxWidth;
+                        height = maxWidth / aspectRatio;
+                    }
+                } else {
+                    maxWidth = width;
+                }
+
+                return {
+                    width: width,
+                    height: height,
+                    maxWidth: maxWidth,
+                    aspectRatio: aspectRatio
+                };
+            }
+        }, {
+            key: '__attachLoadEvent',
+            value: function __attachLoadEvent(image, $wrapper, shouldWrap) {
+                var $image = image.el;
+
+                $wrapper = $wrapper || image.data('wrapper');
+                shouldWrap = shouldWrap || image.data('shouldWrap');
+
+                if ($image.nodeName === 'IMG') {
+                    $image.onload = loadHandler.bind(this);
+                    return;
+                }
+
+                var styles = window.getComputedStyle($image);
+                var src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+                var img = new Image();
+                img.onload = loadHandler.bind(this);
+                img.src = src;
+
+                if (img.complete) loadHandler();
+
+                function loadHandler() {
+                    $image.classList.add('is-loaded');
+
+                    if (shouldWrap) {
+                        $wrapper.classList.add('is-loaded');
+                    }
+                }
+            }
+        }, {
+            key: '__loadImageByType',
+            value: function __loadImageByType(image, type) {
+                var $image = image.el;
+
+                switch (type) {
+                    case 'srcset':
+                        $image.srcset = $image.getAttribute('data-srcset');
+                        $image.src = $image.getAttribute('data-src');
+                        break;
+                    case 'background':
+                        if (this.options.backgroundClass) {
+                            $image.classList.remove(this.options.backgroundClass.replace(/^\./, ''));
+                        } else {
+                            $image.style.removeProperty('background');
+                        }
+                        break;
+                    default:
+                        $image.src = $image.getAttribute('data-src');
+                        break;
+                }
+
+                this.__attachLoadEvent(image);
             }
         }]);
 
