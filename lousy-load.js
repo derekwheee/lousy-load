@@ -68,8 +68,8 @@
     class Plugin {
         constructor(element, options) {
             this.element = element;
-			this._defaults = defaults;
-			this._name = pluginName;
+            this._defaults = defaults;
+            this._name = pluginName;
             this.options = extend(defaults, options);
 
             if (this.options.immediate) {
