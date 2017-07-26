@@ -100,12 +100,16 @@
             }
         }
 
-        init() {
-            const $images = this.element.querySelectorAll(this.options.selector);
+        init(opts = {}) {
+            this.$images = this.element.querySelectorAll(this.options.selector);
 
-            $images.forEach(this.prepareImage.bind(this));
+            this.$images.forEach(this.prepareImage.bind(this));
 
-            return $images;
+            if (!opts.isReinit) {
+                window.onresize = this.__debounce(this.__resizeHandler.bind(this), 50);
+            }
+
+            return this.$images;
         }
 
         prepareImage(element) {
@@ -219,6 +223,16 @@
             }
         }
 
+        __unwrapElement(element) {
+            var parent = element.parentNode;
+
+            while (element.firstChild) {
+                parent.insertBefore(element.firstChild, element);
+            }
+
+            parent.removeChild(element);
+        }
+
         __getImageDimensions($image) {
             const styles = window.getComputedStyle($image);
             // Width and height need to be computed differently for images and background images
@@ -304,6 +318,16 @@
             }
 
             this.__attachLoadEvent(image);
+        }
+
+        __resizeHandler() {
+            this.$images.forEach(image => {
+                if (image.getAttribute('data-nowrap') === null && this.options.wrapElement) {
+                    this.__unwrapElement(image.parentNode, '.ll-image_wrapper');
+                }
+            });
+
+            this.init({ isReinit : true });
         }
     }
 

@@ -123,11 +123,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _createClass(Plugin, [{
             key: 'init',
             value: function init() {
-                var $images = this.element.querySelectorAll(this.options.selector);
+                var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-                $images.forEach(this.prepareImage.bind(this));
+                this.$images = this.element.querySelectorAll(this.options.selector);
 
-                return $images;
+                this.$images.forEach(this.prepareImage.bind(this));
+
+                if (!opts.isReinit) {
+                    window.onresize = this.__debounce(this.__resizeHandler.bind(this), 50);
+                }
+
+                return this.$images;
             }
         }, {
             key: 'prepareImage',
@@ -245,6 +251,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
             }
         }, {
+            key: '__unwrapElement',
+            value: function __unwrapElement(element) {
+                var parent = element.parentNode;
+
+                while (element.firstChild) {
+                    parent.insertBefore(element.firstChild, element);
+                }
+
+                parent.removeChild(element);
+            }
+        }, {
             key: '__getImageDimensions',
             value: function __getImageDimensions($image) {
                 var styles = window.getComputedStyle($image);
@@ -332,6 +349,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
 
                 this.__attachLoadEvent(image);
+            }
+        }, {
+            key: '__resizeHandler',
+            value: function __resizeHandler() {
+                var _this = this;
+
+                console.log('resize');
+
+                this.$images.forEach(function (image) {
+                    if (image.getAttribute('data-nowrap') === null && _this.options.wrapElement) {
+                        _this.__unwrapElement(image.parentNode, '.ll-image_wrapper');
+                    }
+                });
+
+                this.init({ isReinit: true });
             }
         }]);
 
