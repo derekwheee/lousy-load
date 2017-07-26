@@ -253,13 +253,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: '__unwrapElement',
             value: function __unwrapElement(element) {
-                var parent = element.parentNode;
+                var wrapper = element.parentNode;
+                var parent = wrapper.parentNode;
 
-                while (element.firstChild) {
-                    parent.insertBefore(element.firstChild, element);
+                while (wrapper.firstChild) {
+                    parent.insertBefore(wrapper.firstChild, wrapper);
                 }
 
-                parent.removeChild(element);
+                parent.removeChild(wrapper);
             }
         }, {
             key: '__getImageDimensions',
@@ -355,11 +356,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function __resizeHandler() {
                 var _this = this;
 
-                console.log('resize');
-
                 this.$images.forEach(function (image) {
                     if (image.getAttribute('data-nowrap') === null && _this.options.wrapElement) {
-                        _this.__unwrapElement(image.parentNode, '.ll-image_wrapper');
+                        _this.__unwrapElement(image);
                     }
                 });
 

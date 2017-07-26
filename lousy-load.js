@@ -224,13 +224,14 @@
         }
 
         __unwrapElement(element) {
-            var parent = element.parentNode;
+            const wrapper = element.parentNode;
+            const parent = wrapper.parentNode;
 
-            while (element.firstChild) {
-                parent.insertBefore(element.firstChild, element);
+            while (wrapper.firstChild) {
+                parent.insertBefore(wrapper.firstChild, wrapper);
             }
 
-            parent.removeChild(element);
+            parent.removeChild(wrapper);
         }
 
         __getImageDimensions($image) {
@@ -323,7 +324,7 @@
         __resizeHandler() {
             this.$images.forEach(image => {
                 if (image.getAttribute('data-nowrap') === null && this.options.wrapElement) {
-                    this.__unwrapElement(image.parentNode, '.ll-image_wrapper');
+                    this.__unwrapElement(image);
                 }
             });
 
