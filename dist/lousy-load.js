@@ -146,6 +146,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
 
+                if ($image.getAttribute('style')) {
+                    $image.setAttribute('data-ogStyles', $image.getAttribute('style'));
+                }
+
                 image.data('shouldWrap', shouldWrap);
 
                 if (shouldWrap) {
@@ -357,6 +361,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var _this = this;
 
                 this.$images.forEach(function (image) {
+                    if (image.getAttribute('data-ogStyles')) {
+                        image.setAttribute('style', image.getAttribute('data-ogStyles'));
+                    } else {
+                        image.removeAttribute('style');
+                    }
+
                     if (image.getAttribute('data-nowrap') === null && _this.options.wrapElement) {
                         _this.__unwrapElement(image);
                     }

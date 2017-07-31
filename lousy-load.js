@@ -121,6 +121,10 @@
             const shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
             let $wrapper;
 
+            if ($image.getAttribute('style')) {
+                $image.setAttribute('data-ogStyles', $image.getAttribute('style'));
+            }
+
             image.data('shouldWrap', shouldWrap);
 
             if (shouldWrap) {
@@ -323,6 +327,12 @@
 
         __resizeHandler() {
             this.$images.forEach(image => {
+                if (image.getAttribute('data-ogStyles')) {
+                    image.setAttribute('style', image.getAttribute('data-ogStyles'));
+                } else {
+                    image.removeAttribute('style');
+                }
+
                 if (image.getAttribute('data-nowrap') === null && this.options.wrapElement) {
                     this.__unwrapElement(image);
                 }
