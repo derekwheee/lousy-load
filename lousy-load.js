@@ -286,7 +286,7 @@
             }
 
             const styles = window.getComputedStyle($image);
-            const src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+            const src = styles.getPropertyValue('background-image').match(/url\(['"]?([^'"]*)['"]?\)/)[1];
             const img = new Image();
             img.onload = loadHandler.bind(this);
             img.src = src;

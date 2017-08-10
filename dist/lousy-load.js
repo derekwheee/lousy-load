@@ -316,7 +316,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
 
                 var styles = window.getComputedStyle($image);
-                var src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+                var src = styles.getPropertyValue('background-image').match(/url\(['"]?([^'"]*)['"]?\)/)[1];
                 var img = new Image();
                 img.onload = loadHandler.bind(this);
                 img.src = src;
