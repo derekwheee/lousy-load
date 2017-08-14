@@ -125,7 +125,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function init() {
                 var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-                this.$images = this.element.querySelectorAll(this.options.selector);
+                this.$images = this.__getImages();
 
                 this.$images.forEach(this.prepareImage.bind(this));
 
@@ -206,6 +206,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 return true;
             }
         }, {
+            key: '__getImages',
+            value: function __getImages() {
+                return this.element.querySelectorAll(this.options.selector);
+            }
+        }, {
             key: '__debounce',
             value: function __debounce(func, wait, immediate) {
                 // https://davidwalsh.name/javascript-debounce-function
@@ -259,6 +264,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function __unwrapElement(element) {
                 var wrapper = element.parentNode;
                 var parent = wrapper.parentNode;
+
+                if (!wrapper.classList.contains('ll-image_wrapper')) return;
 
                 while (wrapper.firstChild) {
                     parent.insertBefore(wrapper.firstChild, wrapper);
@@ -360,7 +367,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function __resizeHandler() {
                 var _this = this;
 
-                this.$images.forEach(function (image) {
+                this.__getImages().forEach(function (image) {
                     if (image.getAttribute('data-ogStyles')) {
                         image.setAttribute('style', image.getAttribute('data-ogStyles'));
                     } else {

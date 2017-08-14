@@ -101,7 +101,7 @@
         }
 
         init(opts = {}) {
-            this.$images = this.element.querySelectorAll(this.options.selector);
+            this.$images = this.__getImages();
 
             this.$images.forEach(this.prepareImage.bind(this));
 
@@ -180,6 +180,10 @@
             return true;
         }
 
+        __getImages() {
+            return this.element.querySelectorAll(this.options.selector);
+        }
+
         __debounce(func, wait, immediate) {
             // https://davidwalsh.name/javascript-debounce-function
             let timeout;
@@ -230,6 +234,8 @@
         __unwrapElement(element) {
             const wrapper = element.parentNode;
             const parent = wrapper.parentNode;
+
+            if (!wrapper.classList.contains('ll-image_wrapper')) return;
 
             while (wrapper.firstChild) {
                 parent.insertBefore(wrapper.firstChild, wrapper);
@@ -326,7 +332,7 @@
         }
 
         __resizeHandler() {
-            this.$images.forEach(image => {
+            this.__getImages().forEach(image => {
                 if (image.getAttribute('data-ogStyles')) {
                     image.setAttribute('style', image.getAttribute('data-ogStyles'));
                 } else {
