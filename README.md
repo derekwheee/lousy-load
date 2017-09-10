@@ -19,7 +19,7 @@ Basic Examples
 
 Vanilla JavaScript
 ```html
-<img data-src="path/to/image.jpg">
+<img data-src="path/to/image.jpg" width="400" height="300">
         
 <script src="lousy-load.min.js"></script>
 <script>
@@ -29,7 +29,7 @@ Vanilla JavaScript
 
 jQuery
 ```html
-<img data-src="path/to/image.jpg">
+<img data-src="path/to/image.jpg" width="400" height="300">
         
 <script src="lousy-load.min.js"></script>
 <script>
@@ -43,12 +43,16 @@ Advanced Example
 ```html
 <img 
     class="ll-image"
-    data-src="path/to/image.jpg">
+    data-src="path/to/image.jpg"
+     width="400"
+     height="300">
 
 <img 
     data-nowrap
     class="ll-image"
-    data-src="path/to/image2.jpg">
+    data-src="path/to/image2.jpg"
+    width="400"
+    height="300">
         
 <script src="lousy-load.min.js"></script>
 <script>

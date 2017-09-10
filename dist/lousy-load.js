@@ -16,9 +16,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 (function (root, factory) {
     var pluginName = 'lousyLoad';
 
-    if (typeof define === 'function' && define.amd) {
-        define([], factory(pluginName));
-    } else if ((typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
+    if ((typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
         module.exports = factory(pluginName);
     } else {
         root[pluginName] = factory(pluginName);

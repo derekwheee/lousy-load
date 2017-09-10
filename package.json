@@ -1,6 +1,6 @@
 {
   "name": "lousy-load",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "JavaScript lazy load plugin with responsive image support",
   "keywords": [
     "lazy load",

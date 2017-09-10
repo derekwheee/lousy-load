@@ -8,9 +8,7 @@
 (function (root, factory) {
     const pluginName = 'lousyLoad';
 
-    if (typeof define === 'function' && define.amd) {
-        define([], factory(pluginName));
-    } else if (typeof exports === 'object') {
+    if (typeof exports === 'object') {
         module.exports = factory(pluginName);
     } else {
         root[pluginName] = factory(pluginName);
