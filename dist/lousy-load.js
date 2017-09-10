@@ -123,11 +123,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _createClass(Plugin, [{
             key: 'init',
             value: function init() {
-                var $images = this.element.querySelectorAll(this.options.selector);
+                var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-                $images.forEach(this.prepareImage.bind(this));
+                this.$images = this.__getImages();
 
-                return $images;
+                this.$images.forEach(this.prepareImage.bind(this));
+
+                if (!opts.isReinit) {
+                    window.onresize = this.__debounce(this.__resizeHandler.bind(this), 50);
+                }
+
+                return this.$images;
             }
         }, {
             key: 'prepareImage',
@@ -139,6 +145,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var dimensions = this.__getImageDimensions($image);
                 var shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
                 var $wrapper = void 0;
+
+                if ($image.getAttribute('style')) {
+                    $image.setAttribute('data-ogStyles', $image.getAttribute('style'));
+                }
 
                 image.data('shouldWrap', shouldWrap);
 
@@ -196,6 +206,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 return true;
             }
         }, {
+            key: '__getImages',
+            value: function __getImages() {
+                return this.element.querySelectorAll(this.options.selector);
+            }
+        }, {
             key: '__debounce',
             value: function __debounce(func, wait, immediate) {
                 // https://davidwalsh.name/javascript-debounce-function
@@ -243,6 +258,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         parent.appendChild(child);
                     }
                 }
+            }
+        }, {
+            key: '__unwrapElement',
+            value: function __unwrapElement(element) {
+                var wrapper = element.parentNode;
+                var parent = wrapper.parentNode;
+
+                if (!wrapper.classList.contains('ll-image_wrapper')) return;
+
+                while (wrapper.firstChild) {
+                    parent.insertBefore(wrapper.firstChild, wrapper);
+                }
+
+                parent.removeChild(wrapper);
             }
         }, {
             key: '__getImageDimensions',
@@ -294,7 +323,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
 
                 var styles = window.getComputedStyle($image);
-                var src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+                var src = styles.getPropertyValue('background-image').match(/url\(['"]?([^'"]*)['"]?\)/)[1];
                 var img = new Image();
                 img.onload = loadHandler.bind(this);
                 img.src = src;
@@ -332,6 +361,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
 
                 this.__attachLoadEvent(image);
+            }
+        }, {
+            key: '__resizeHandler',
+            value: function __resizeHandler() {
+                var _this = this;
+
+                this.__getImages().forEach(function (image) {
+                    if (image.getAttribute('data-ogStyles')) {
+                        image.setAttribute('style', image.getAttribute('data-ogStyles'));
+                    } else {
+                        image.removeAttribute('style');
+                    }
+
+                    if (image.getAttribute('data-nowrap') === null && _this.options.wrapElement) {
+                        _this.__unwrapElement(image);
+                    }
+                });
+
+                this.init({ isReinit: true });
             }
         }]);
 

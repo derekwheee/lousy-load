@@ -21,6 +21,16 @@
     background-position: center;
 }
 
+.ll-demo .responsive-background-image.wrapped {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
 #SVTOFOXL { background-image: url('../resources/1600x1200.jpg'); }
 @media (max-width: 1920px) { #SVTOFOXL { background-image: url('../resources/3200x2400.jpg'); } }
 @media (max-width: 1024px) { #SVTOFOXL { background-image: url('../resources/1600x1200.jpg'); } }

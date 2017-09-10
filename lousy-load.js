@@ -100,12 +100,16 @@
             }
         }
 
-        init() {
-            const $images = this.element.querySelectorAll(this.options.selector);
+        init(opts = {}) {
+            this.$images = this.__getImages();
 
-            $images.forEach(this.prepareImage.bind(this));
+            this.$images.forEach(this.prepareImage.bind(this));
 
-            return $images;
+            if (!opts.isReinit) {
+                window.onresize = this.__debounce(this.__resizeHandler.bind(this), 50);
+            }
+
+            return this.$images;
         }
 
         prepareImage(element) {
@@ -116,6 +120,10 @@
             const dimensions = this.__getImageDimensions($image);
             const shouldWrap = $image.getAttribute('data-nowrap') === null && this.options.wrapElement;
             let $wrapper;
+
+            if ($image.getAttribute('style')) {
+                $image.setAttribute('data-ogStyles', $image.getAttribute('style'));
+            }
 
             image.data('shouldWrap', shouldWrap);
 
@@ -172,6 +180,10 @@
             return true;
         }
 
+        __getImages() {
+            return this.element.querySelectorAll(this.options.selector);
+        }
+
         __debounce(func, wait, immediate) {
             // https://davidwalsh.name/javascript-debounce-function
             let timeout;
@@ -217,6 +229,19 @@
                     parent.appendChild(child);
                 }
             }
+        }
+
+        __unwrapElement(element) {
+            const wrapper = element.parentNode;
+            const parent = wrapper.parentNode;
+
+            if (!wrapper.classList.contains('ll-image_wrapper')) return;
+
+            while (wrapper.firstChild) {
+                parent.insertBefore(wrapper.firstChild, wrapper);
+            }
+
+            parent.removeChild(wrapper);
         }
 
         __getImageDimensions($image) {
@@ -267,7 +292,7 @@
             }
 
             const styles = window.getComputedStyle($image);
-            const src = styles.getPropertyValue('background-image').replace(/(?:^url\(["']?)|(?:["']?\))$/g, '');
+            const src = styles.getPropertyValue('background-image').match(/url\(['"]?([^'"]*)['"]?\)/)[1];
             const img = new Image();
             img.onload = loadHandler.bind(this);
             img.src = src;
@@ -304,6 +329,22 @@
             }
 
             this.__attachLoadEvent(image);
+        }
+
+        __resizeHandler() {
+            this.__getImages().forEach(image => {
+                if (image.getAttribute('data-ogStyles')) {
+                    image.setAttribute('style', image.getAttribute('data-ogStyles'));
+                } else {
+                    image.removeAttribute('style');
+                }
+
+                if (image.getAttribute('data-nowrap') === null && this.options.wrapElement) {
+                    this.__unwrapElement(image);
+                }
+            });
+
+            this.init({ isReinit : true });
         }
     }
 
