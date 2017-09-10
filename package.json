@@ -1,8 +1,14 @@
 {
   "name": "lousy-load",
-  "version": "0.1.0",
-  "description": "A lazy loader for the future",
-  "main": "./dist/lousy-loader.js",
+  "version": "1.0.0",
+  "description": "JavaScript lazy load plugin with responsive image support",
+  "keywords": [
+    "lazy load",
+    "responsive image",
+    "plugin",
+    "webpack"
+  ],
+  "main": "./dist/lousy-load.js",
   "repository": "https://github.com/frxnz/lousy-load.git",
   "author": "Derek Wheelden <derek.wheelden@gmail.com>",
   "license": "MIT",

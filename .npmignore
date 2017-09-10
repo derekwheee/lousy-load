@@ -1,0 +1,8 @@
+.babelrc
+.travis.yml
+.nyc_output/
+coverage/
+demo/
+resources/
+src/
+test/
